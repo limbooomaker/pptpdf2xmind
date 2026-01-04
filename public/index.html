@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SlideMind - 智能PDF转思维导图</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SlideMind</h1>
+            <p class="subtitle">智能PDF转思维导图工具</p>
+        </header>
+
+        <div id="uploadSection" class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </div>
+                <h3>拖拽PDF文件到此处</h3>
+                <p>或点击选择文件</p>
+                <p class="file-limit">支持PDF格式，最大50MB</p>
+                <input type="file" id="fileInput" accept=".pdf" hidden>
+            </div>
+        </div>
+
+        <div id="processingSection" class="processing-section hidden">
+            <div class="processing-animation">
+                <div class="spinner"></div>
+            </div>
+            <h3>正在处理您的PDF...</h3>
+            <div class="progress-steps">
+                <div class="step" id="step1">
+                    <span class="step-icon">1</span>
+                    <span class="step-text">解析中</span>
+                </div>
+                <div class="step" id="step2">
+                    <span class="step-icon">2</span>
+                    <span class="step-text">AI分析中</span>
+                </div>
+                <div class="step" id="step3">
+                    <span class="step-icon">3</span>
+                    <span class="step-text">生成中</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultSection" class="result-section hidden">
+            <div class="success-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <h3>思维导图生成完成！</h3>
+            <p class="filename" id="resultFilename"></p>
+            <button class="download-btn" id="downloadBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                下载XMind文件
+            </button>
+            <button class="restart-btn" id="restartBtn">处理另一个文件</button>
+        </div>
+
+        <div id="errorSection" class="error-section hidden">
+            <div class="error-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <h3>处理失败</h3>
+            <p id="errorMessage"></p>
+            <button class="restart-btn" id="errorRestartBtn">重新尝试</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
