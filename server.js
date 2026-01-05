@@ -50,15 +50,32 @@ ensureDir(process.env.TEMP_DIR || './temp');
 const executePython = async (script, args) => {
     return new Promise((resolve, reject) => {
         const command = `python3 ${script} ${args.join(' ')}`;
+        console.log('Executing Python command:', command);
+        
         exec(command, (error, stdout, stderr) => {
+            console.log('Python stdout:', stdout);
+            if (stderr) {
+                console.log('Python stderr:', stderr);
+            }
+            
             if (error) {
-                reject(error);
+                console.error('Python execution error:', error);
+                reject(new Error(`Python execution failed: ${error.message}`));
                 return;
             }
+            
+            if (!stdout || stdout.trim() === '') {
+                reject(new Error('Python script produced no output'));
+                return;
+            }
+            
             try {
-                resolve(JSON.parse(stdout));
+                const result = JSON.parse(stdout.trim());
+                resolve(result);
             } catch (e) {
-                reject(new Error(`Failed to parse Python output: ${stdout}`));
+                console.error('JSON parse error:', e.message);
+                console.error('Raw output:', stdout);
+                reject(new Error(`Failed to parse Python output as JSON: ${stdout}`));
             }
         });
     });
@@ -263,6 +280,28 @@ app.get('/api/download/:filename', (req, res) => {
     }
 });
 
+// 健康检查路由
+app.get('/', (req, res) => {
+    res.json({
+        status: 'ok',
+        message: 'SlideMind API is running',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// 健康检查API
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        service: 'SlideMind',
+        version: '1.0.0',
+        timestamp: new Date().toISOString()
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`SlideMind server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Upload directory: ${process.env.UPLOAD_DIR}`);
+    console.log(`Output directory: ${process.env.OUTPUT_DIR}`);
 });

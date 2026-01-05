@@ -34,15 +34,30 @@ def process_pdf(pdf_path, output_dir):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print(json.dumps({"error": "Usage: python pdf_processor.py <pdf_path> <output_dir>"}))
+        error_msg = json.dumps({"error": "Usage: python pdf_processor.py <pdf_path> <output_dir>"})
+        print(error_msg)
         sys.exit(1)
     
     pdf_path = sys.argv[1]
     output_dir = sys.argv[2]
     
+    # 验证文件存在性
+    if not os.path.exists(pdf_path):
+        error_msg = json.dumps({"status": "error", "message": f"PDF file not found: {pdf_path}"})
+        print(error_msg)
+        sys.exit(1)
+    
     try:
         result = process_pdf(pdf_path, output_dir)
-        print(json.dumps({"status": "success", "data": result}))
+        output = json.dumps({"status": "success", "data": result})
+        print(output)
     except Exception as e:
-        print(json.dumps({"status": "error", "message": str(e)}))
+        import traceback
+        error_details = traceback.format_exc()
+        error_msg = json.dumps({
+            "status": "error", 
+            "message": str(e),
+            "traceback": error_details
+        })
+        print(error_msg)
         sys.exit(1)
