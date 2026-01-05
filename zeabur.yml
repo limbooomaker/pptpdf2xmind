@@ -1,0 +1,18 @@
+services:
+  slidemind:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - UPLOAD_DIR=/tmp/uploads
+      - OUTPUT_DIR=/tmp/outputs
+      - TEMP_DIR=/tmp/temp
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    health_check:
+      path: /
+      port: 3000
+      initial_delay: 30
+      period: 10
