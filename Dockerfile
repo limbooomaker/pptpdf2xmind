@@ -1,55 +1,38 @@
-FROM node:18-alpine
+FROM python:3.9-slim
 
-# 安装Python和系统依赖（pdf2image需要的poppler-utils）
-RUN apk add --no-cache \
-    python3 \
-    py3-pip \
+# 安装系统依赖（pdf2image需要的poppler-utils）
+RUN apt-get update && apt-get install -y \
     poppler-utils \
-    && ln -sf python3 /usr/bin/python
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# 安装构建依赖（用于编译Python包）
-RUN apk add --no-cache --virtual .build-deps \
-    gcc \
-    musl-dev \
-    python3-dev \
-    libffi-dev \
-    openssl-dev \
-    jpeg-dev \
-    zlib-dev \
-    && pip3 install --upgrade pip
+# 安装Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
 # 创建工作目录
 WORKDIR /app
 
-# 先复制requirements.txt安装Python依赖（利用Docker缓存）
-COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
-
-# 清理构建依赖，减小镜像大小
-RUN apk del .build-deps \
-    && rm -rf /var/cache/apk/*
-
 # 复制项目文件
 COPY . .
 
+# 安装Python依赖
+RUN pip install -r requirements.txt
+
 # 安装Node.js依赖
-RUN npm install --production
+RUN npm install
 
 # 创建必要的目录
-RUN mkdir -p /app/uploads /app/outputs /app/temp
+RUN mkdir -p /tmp/uploads /tmp/outputs /tmp/temp
 
 # 设置环境变量
 ENV PORT=3000
-ENV UPLOAD_DIR=/app/uploads
-ENV OUTPUT_DIR=/app/outputs
-ENV TEMP_DIR=/app/temp
-ENV NODE_ENV=production
-
-# 修复文件权限
-RUN chmod +x pdf_processor.py
+ENV UPLOAD_DIR=/tmp/uploads
+ENV OUTPUT_DIR=/tmp/outputs
+ENV TEMP_DIR=/tmp/temp
 
 # 暴露端口
 EXPOSE 3000
 
-# 启动应用（使用生产环境设置）
+# 启动应用
 CMD ["node", "server.js"]
