@@ -7,12 +7,27 @@ RUN apk add --no-cache \
     poppler-utils \
     && ln -sf python3 /usr/bin/python
 
+# 安装构建依赖（用于编译Python包）
+RUN apk add --no-cache --virtual .build-deps \
+    gcc \
+    musl-dev \
+    python3-dev \
+    libffi-dev \
+    openssl-dev \
+    jpeg-dev \
+    zlib-dev \
+    && pip3 install --upgrade pip
+
 # 创建工作目录
 WORKDIR /app
 
 # 先复制requirements.txt安装Python依赖（利用Docker缓存）
 COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
+
+# 清理构建依赖，减小镜像大小
+RUN apk del .build-deps \
+    && rm -rf /var/cache/apk/*
 
 # 复制项目文件
 COPY . .
