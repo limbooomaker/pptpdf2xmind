@@ -108,9 +108,15 @@ const SYSTEM_PROMPT = `你是一个严格的JSON生成器。请根据用户提�
 
 async function generateKnowledgeTree(pagesData) {
     try {
+        // 检查API密钥是否配置
+        if (!process.env.DEEPSEEK_API_KEY) {
+            throw new Error('DeepSeek API key is not configured. Please set DEEPSEEK_API_KEY environment variable.');
+        }
+        
         // 处理所有页面，不限制数量
         const textBlocks = pagesData.map(page => {
-            return `[PAGE_${page.page_num}]\n${page.text}`;
+            return `[PAGE_${page.page_num}]
+${page.text}`;
         }).join('\n\n');
 
         const response = await openai.chat.completions.create({
@@ -119,7 +125,8 @@ async function generateKnowledgeTree(pagesData) {
                 { role: 'system', content: SYSTEM_PROMPT },
                 { role: 'user', content: textBlocks }
             ],
-            temperature: 0.3
+            temperature: 0.3,
+            timeout: 30000 // 30秒超时
         });
 
         const content = response.choices[0].message.content.trim();
@@ -188,8 +195,49 @@ async function generateKnowledgeTree(pagesData) {
         }
     } catch (error) {
         console.error('DeepSeek API error:', error);
-        throw new Error(`Failed to generate knowledge tree: ${error.message}`);
+        
+        // 提供友好的错误信息
+        if (error.message.includes('API key') || error.message.includes('authorization')) {
+            throw new Error('AI服务配置错误：请检查DEEPSEEK_API_KEY环境变量是否正确设置');
+        } else if (error.message.includes('timeout')) {
+            throw new Error('AI服务响应超时：请稍后重试或联系技术支持');
+        } else {
+            throw new Error(`AI服务暂时不可用：${error.message}`);
+        }
     }
 }
 
-module.exports = { generateKnowledgeTree };
+// 备用知识树生成函数（当AI服务不可用时使用）
+function generateFallbackKnowledgeTree(pagesData) {
+    console.log('使用备用知识树生成方案');
+    
+    // 简单的基于页面结构的备用方案
+    const rootNode = {
+        title: 'PDF文档内容',
+        children: []
+    };
+    
+    // 为每个页面创建一个节点
+    pagesData.forEach(page => {
+        const pageNode = {
+            title: `第${page.page_num}页内容`,
+            source_pages: [page.page_num],
+            children: []
+        };
+        
+        // 提取前100个字符作为摘要
+        const summary = page.text.substring(0, 100).replace(/\n/g, ' ') + '...';
+        const contentNode = {
+            title: summary,
+            source_pages: [page.page_num],
+            children: []
+        };
+        
+        pageNode.children.push(contentNode);
+        rootNode.children.push(pageNode);
+    });
+    
+    return rootNode;
+}
+
+module.exports = { generateKnowledgeTree, generateFallbackKnowledgeTree };

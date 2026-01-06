@@ -71,9 +71,26 @@ const executePython = async (script, args) => {
             
             // 检查输出是否包含错误信息（如Bad Gateway）
             const output = stdout.trim();
-            if (output.includes('Bad Gateway') || output.includes('error') || output.includes('Error')) {
+            
+            // 更严格的错误检测
+            const errorKeywords = [
+                'Bad Gateway', 'error', 'Error', 'failed', 'Failed', 
+                'exception', 'Exception', 'traceback', 'Traceback',
+                'not found', 'not exist', 'permission denied', 'timeout'
+            ];
+            
+            const hasError = errorKeywords.some(keyword => output.includes(keyword));
+            
+            if (hasError) {
                 console.error('Python script returned error output:', output);
-                reject(new Error(`Python script error: ${output}`));
+                reject(new Error(`Python script error: ${output.substring(0, 200)}`));
+                return;
+            }
+            
+            // 检查是否以{开头（有效JSON）
+            if (!output.startsWith('{')) {
+                console.error('Python output is not valid JSON (does not start with {):', output.substring(0, 200));
+                reject(new Error(`Python script returned invalid JSON format: ${output.substring(0, 200)}`));
                 return;
             }
             
@@ -83,7 +100,7 @@ const executePython = async (script, args) => {
             } catch (e) {
                 console.error('JSON parse error:', e.message);
                 console.error('Raw output:', output);
-                reject(new Error(`Failed to parse Python output as JSON: ${output}`));
+                reject(new Error(`Failed to parse Python output as JSON: ${output.substring(0, 200)}`));
             }
         });
     });
@@ -139,14 +156,15 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
 
             // 处理PDF页面
             const pagesData = await Promise.race([
-                executePython(path.join(__dirname, 'pdf_processor.py'), [pdfPath, outputDir]),
+                executePython('./pdf_processor.py', [pdfPath, outputDir]),
                 timeoutPromise
             ]);
             
-            // 生成知识树（最多重试2次）
-            const { generateKnowledgeTree } = require('./aiService');
+            // 生成知识树（最多重试2次，失败时使用备用方案）
+            const { generateKnowledgeTree, generateFallbackKnowledgeTree } = require('./aiService');
             let knowledgeTree;
             let retryCount = 0;
+            let useFallback = false;
             
             while (retryCount < 3) {
                 try {
@@ -157,10 +175,16 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
                     break;
                 } catch (aiError) {
                     retryCount++;
+                    console.log(`AI服务重试 ${retryCount}/3，错误:`, aiError.message);
+                    
                     if (retryCount === 3) {
-                        throw aiError;
+                        // 如果重试3次都失败，使用备用方案
+                        console.log('AI服务失败，使用备用知识树生成方案');
+                        knowledgeTree = generateFallbackKnowledgeTree(pagesData.data);
+                        useFallback = true;
+                        break;
                     }
-                    console.log(`AI服务重试 ${retryCount}/3`);
+                    
                     await new Promise(resolve => setTimeout(resolve, 2000)); // 2秒后重试
                 }
             }
@@ -312,14 +336,4 @@ app.listen(PORT, () => {
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`Upload directory: ${process.env.UPLOAD_DIR}`);
     console.log(`Output directory: ${process.env.OUTPUT_DIR}`);
-    console.log(`Current working directory: ${process.cwd()}`);
-    console.log(`Python script path: ${path.join(__dirname, 'pdf_processor.py')}`);
-    
-    // 检查Python脚本是否存在
-    const pythonScriptPath = path.join(__dirname, 'pdf_processor.py');
-    if (fs.existsSync(pythonScriptPath)) {
-        console.log('Python script exists and is accessible');
-    } else {
-        console.error('Python script not found at:', pythonScriptPath);
-    }
 });
