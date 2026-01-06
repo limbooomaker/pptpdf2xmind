@@ -139,7 +139,7 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
 
             // 处理PDF页面
             const pagesData = await Promise.race([
-                executePython('./pdf_processor.py', [pdfPath, outputDir]),
+                executePython(path.join(__dirname, 'pdf_processor.py'), [pdfPath, outputDir]),
                 timeoutPromise
             ]);
             
@@ -312,4 +312,14 @@ app.listen(PORT, () => {
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`Upload directory: ${process.env.UPLOAD_DIR}`);
     console.log(`Output directory: ${process.env.OUTPUT_DIR}`);
+    console.log(`Current working directory: ${process.cwd()}`);
+    console.log(`Python script path: ${path.join(__dirname, 'pdf_processor.py')}`);
+    
+    // 检查Python脚本是否存在
+    const pythonScriptPath = path.join(__dirname, 'pdf_processor.py');
+    if (fs.existsSync(pythonScriptPath)) {
+        console.log('Python script exists and is accessible');
+    } else {
+        console.error('Python script not found at:', pythonScriptPath);
+    }
 });

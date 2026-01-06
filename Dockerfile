@@ -25,6 +25,9 @@ RUN npm install
 # 创建必要的目录
 RUN mkdir -p /tmp/uploads /tmp/outputs /tmp/temp
 
+# 确保Python脚本有执行权限
+RUN chmod +x pdf_processor.py
+
 # 设置环境变量
 ENV PORT=3000
 ENV UPLOAD_DIR=/tmp/uploads
