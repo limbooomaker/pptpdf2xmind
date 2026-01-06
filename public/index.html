@@ -4,86 +4,1102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SlideMind - 智能PDF转思维导图</title>
-    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0a0a0a 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .section {
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 900px;
+            padding: 40px;
+        }
+
+        .hero-title {
+            font-size: 4em;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5em;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 100;
+            opacity: 1;
+        }
+
+        .upload-container:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .upload-area {
+            border: 3px dashed rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            padding: 60px 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .upload-area:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #ffffff;
+        }
+
+        .upload-area.dragover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ffffff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .upload-area h3 {
+            color: #ffffff;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .upload-area p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 5px;
+        }
+
+        .file-limit {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .file-preview-section {
+            margin-top: 20px;
+        }
+
+        .file-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px 20px;
+            margin-bottom: 20px;
+        }
+
+        .file-preview-icon {
+            color: #4ade80;
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+        }
+
+        .file-preview-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .file-preview-info {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .file-preview-info h4 {
+            color: #ffffff;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .file-preview-info p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+        }
+
+        .change-file-btn {
+            background: transparent;
+            color: #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .change-file-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ffffff;
+        }
+
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            color: #667eea;
+            border: none;
+            padding: 18px 40px;
+            border-radius: 30px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            z-index: 101;
+            margin-top: 100px;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .generate-btn:disabled {
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .processing-section,
+        .result-section,
+        .error-section {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .processing-animation {
+            margin: 40px 0;
+            position: relative;
+            width: 150px;
+            height: 150px;
+        }
+
+        .progress-circle {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.2);
+            stroke-width: 8;
+        }
+
+        .progress-circle-bar {
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 283;
+            transition: stroke-dashoffset 0.1s ease;
+        }
+
+        .progress-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .processing-section h3 {
+            color: #ffffff;
+            margin-bottom: 30px;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            opacity: 0.4;
+            transition: opacity 0.3s ease;
+        }
+
+        .step.active {
+            opacity: 1;
+        }
+
+        .step.completed {
+            opacity: 1;
+        }
+
+        .step.completed .step-icon {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-icon {
+            background: #ffffff;
+            color: #667eea;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .step-text {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .success-icon {
+            color: #4caf50;
+            margin-bottom: 20px;
+        }
+
+        .result-section h3 {
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .filename {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+            word-break: break-all;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            color: #667eea;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .restart-btn {
+            background: transparent;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            background: #ffffff;
+            color: #667eea;
+        }
+
+        .error-icon {
+            color: #f44336;
+            margin-bottom: 20px;
+        }
+
+        .error-section h3 {
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .error-section p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+        }
+
+        .about-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 100px 20px;
+        }
+
+        .about-content {
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .about-text h2 {
+            font-size: 3em;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .about-text p {
+            font-size: 1.2em;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+        }
+
+        .about-svg {
+            width: 100%;
+            height: auto;
+        }
+
+        .features-section {
+            background: #111;
+            padding: 100px 20px;
+        }
+
+        .features-section h2 {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 60px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            opacity: 1;
+        }
+
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-10px);
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+
+        .feature-card p {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        .faq-section {
+            background: #111;
+            padding: 100px 20px;
+        }
+
+        .faq-section h2 {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 60px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .faq-question {
+            padding: 25px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .faq-question:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .faq-question h3 {
+            font-size: 1.2em;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .faq-answer.active {
+            max-height: 500px;
+        }
+
+        .faq-answer p {
+            padding: 0 25px 25px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        .faq-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            z-index: 1000;
+            width: 0%;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 80px;
+            right: 30px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-20px); }
+            60% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5em;
+            }
+
+            .hero-subtitle {
+                font-size: 1.2em;
+            }
+
+            .about-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .about-text h2 {
+                font-size: 2em;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .progress-steps {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .upload-area {
+                padding: 40px 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>SlideMind</h1>
-            <p class="subtitle">智能PDF转思维导图工具</p>
-        </header>
+    <div class="progress-bar" id="progressBar"></div>
 
-        <div id="uploadSection" class="upload-section">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
+    <section class="section hero-section" id="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">SlideMind</h1>
+            <p class="hero-subtitle">智能PDF转思维导图工具</p>
+            
+            <div class="upload-container">
+                <div id="uploadSection" class="upload-section">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h3>拖拽PDF文件到此处</h3>
+                        <p>或点击选择文件</p>
+                        <p class="file-limit">支持PDF格式，最大50MB</p>
+                        <input type="file" id="fileInput" accept=".pdf" hidden>
+                    </div>
+                </div>
+
+                <div id="filePreviewSection" class="file-preview-section hidden">
+                    <div class="file-preview">
+                        <div class="file-preview-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <div class="file-preview-info">
+                            <h4 id="previewFilename">文件名.pdf</h4>
+                            <p id="previewFilesize">0 MB</p>
+                        </div>
+                        <button class="change-file-btn" id="changeFileBtn">更换文件</button>
+                    </div>
+                </div>
+
+                <div id="processingSection" class="processing-section hidden">
+                    <div class="processing-animation">
+                        <svg class="progress-circle" viewBox="0 0 100 100">
+                            <circle class="progress-bg" cx="50" cy="50" r="45"></circle>
+                            <circle class="progress-circle-bar" cx="50" cy="50" r="45"></circle>
+                        </svg>
+                        <div class="progress-percentage" id="progressPercentage">0%</div>
+                    </div>
+                    <h3 id="processingStatus">正在解析您的PDF...</h3>
+                    <div class="progress-steps">
+                        <div class="step" id="step1">
+                            <span class="step-icon">1</span>
+                            <span class="step-text">解析中</span>
+                        </div>
+                        <div class="step" id="step2">
+                            <span class="step-icon">2</span>
+                            <span class="step-text">AI分析中</span>
+                        </div>
+                        <div class="step" id="step3">
+                            <span class="step-icon">3</span>
+                            <span class="step-text">生成中</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="resultSection" class="result-section hidden">
+                    <div class="success-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <h3>思维导图生成完成！</h3>
+                    <p class="filename" id="resultFilename"></p>
+                    <button class="download-btn" id="downloadBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        下载XMind文件
+                    </button>
+                    <button class="restart-btn" id="restartBtn">处理另一个文件</button>
+                </div>
+
+                <div id="errorSection" class="error-section hidden">
+                    <div class="error-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </div>
+                    <h3>处理失败</h3>
+                    <p id="errorMessage"></p>
+                    <button class="restart-btn" id="errorRestartBtn">重新尝试</button>
+                </div>
+            </div>
+
+            <button class="generate-btn" id="generateBtn" disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                开始生成思维导图
+            </button>
+        </div>
+
+        <div class="scroll-indicator">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
+            </svg>
+        </div>
+    </section>
+
+    <section class="section about-section" id="about">
+        <div class="about-content">
+            <div class="about-text">
+                <h2>关于 SlideMind</h2>
+                <p>SlideMind 是一款强大的智能PDF转思维导图工具，利用先进的AI技术，将您的PDF文档快速转换为结构清晰的思维导图。</p>
+                <p>无论是学习笔记、会议记录还是项目文档，SlideMind 都能帮助您快速梳理内容，提升学习效率和工作效率。</p>
+            </div>
+            <div class="about-svg">
+                <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <g id="pdf-doc">
+                        <rect x="50" y="50" width="100" height="140" rx="10" fill="none" stroke="url(#gradient1)" stroke-width="3" class="pdf-outline"/>
+                        <path d="M70 90h60 M70 110h60 M70 130h40" stroke="url(#gradient1)" stroke-width="2" stroke-linecap="round" class="pdf-lines"/>
+                        <text x="100" y="80" text-anchor="middle" fill="#667eea" font-size="14" font-weight="bold" class="pdf-text">PDF</text>
+                    </g>
+
+                    <g id="arrow" transform="translate(180, 120)">
+                        <path d="M0 0 L40 0 L40 -10 L60 10 L40 30 L40 20 L0 20 Z" fill="url(#gradient1)" class="arrow-shape"/>
+                    </g>
+
+                    <g id="mindmap" transform="translate(260, 50)">
+                        <circle cx="70" cy="70" r="30" fill="none" stroke="url(#gradient1)" stroke-width="3" class="center-circle"/>
+                        <circle cx="30" cy="30" r="15" fill="none" stroke="url(#gradient1)" stroke-width="2" class="node-1"/>
+                        <circle cx="110" cy="30" r="15" fill="none" stroke="url(#gradient1)" stroke-width="2" class="node-2"/>
+                        <circle cx="30" cy="110" r="15" fill="none" stroke="url(#gradient1)" stroke-width="2" class="node-3"/>
+                        <circle cx="110" cy="110" r="15" fill="none" stroke="url(#gradient1)" stroke-width="2" class="node-4"/>
+                        <line x1="70" y1="70" x2="30" y2="30" stroke="url(#gradient1)" stroke-width="2" class="line-1"/>
+                        <line x1="70" y1="70" x2="110" y2="30" stroke="url(#gradient1)" stroke-width="2" class="line-2"/>
+                        <line x1="70" y1="70" x2="30" y2="110" stroke="url(#gradient1)" stroke-width="2" class="line-3"/>
+                        <line x1="70" y1="70" x2="110" y2="110" stroke="url(#gradient1)" stroke-width="2" class="line-4"/>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <section class="section features-section" id="features">
+        <h2>核心功能</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <h3>图片嵌入</h3>
+                <p>独有图片嵌入功能，自动提取PDF中的幻灯片图片并插入思维导图，在图片上批注更直观，知识点理解更深刻。</p>
+            </div>
+
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <h3>学期规划</h3>
+                <p>学期初导入课程PPT，快速搭建学科知识框架；学期末一键生成复习导图，高效梳理知识点，助力考试复习。</p>
+            </div>
+
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <h3>智能解析</h3>
+                <p>利用先进的AI技术，智能识别PDF文档中的关键信息和结构，自动生成逻辑清晰的思维导图。</p>
+            </div>
+
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <h3>快速转换</h3>
+                <p>秒级响应速度，快速完成PDF到思维导图的转换，大幅提升学习和工作效率。</p>
+            </div>
+
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                <h3>高质量输出</h3>
+                <p>生成结构清晰、逻辑严谨的思维导图，支持XMind格式，可直接编辑和分享。</p>
+            </div>
+
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <h3>安全可靠</h3>
+                <p>所有文件处理均在本地完成，确保您的文档隐私安全，不会上传到任何服务器。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section faq-section" id="faq">
+        <h2>常见问题</h2>
+        <div class="faq-container">
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>SlideMind 支持哪些文件格式？</h3>
+                    <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
                 </div>
-                <h3>拖拽PDF文件到此处</h3>
-                <p>或点击选择文件</p>
-                <p class="file-limit">支持PDF格式，最大50MB</p>
-                <input type="file" id="fileInput" accept=".pdf" hidden>
-            </div>
-        </div>
-
-        <div id="processingSection" class="processing-section hidden">
-            <div class="processing-animation">
-                <div class="spinner"></div>
-            </div>
-            <h3>正在处理您的PDF...</h3>
-            <div class="progress-steps">
-                <div class="step" id="step1">
-                    <span class="step-icon">1</span>
-                    <span class="step-text">解析中</span>
-                </div>
-                <div class="step" id="step2">
-                    <span class="step-icon">2</span>
-                    <span class="step-text">AI分析中</span>
-                </div>
-                <div class="step" id="step3">
-                    <span class="step-icon">3</span>
-                    <span class="step-text">生成中</span>
+                <div class="faq-answer">
+                    <p>目前 SlideMind 支持 PDF 格式的文件输入，输出为 XMind 格式的思维导图文件，您可以使用 XMind 软件或其他支持 XMind 格式的工具进行编辑。</p>
                 </div>
             </div>
-        </div>
 
-        <div id="resultSection" class="result-section hidden">
-            <div class="success-icon">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>文件大小有限制吗？</h3>
+                    <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="faq-answer">
+                    <p>是的，目前支持的最大文件大小为 50MB。如果您需要处理更大的文件，建议先分割文件或联系我们寻求帮助。</p>
+                </div>
             </div>
-            <h3>思维导图生成完成！</h3>
-            <p class="filename" id="resultFilename"></p>
-            <button class="download-btn" id="downloadBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                下载XMind文件
-            </button>
-            <button class="restart-btn" id="restartBtn">处理另一个文件</button>
-        </div>
 
-        <div id="errorSection" class="error-section hidden">
-            <div class="error-icon">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>转换需要多长时间？</h3>
+                    <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="faq-answer">
+                    <p>转换时间取决于文件的大小和复杂程度。一般来说，普通文档在几秒钟到几分钟内即可完成转换。我们会持续优化算法，提升转换速度。</p>
+                </div>
             </div>
-            <h3>处理失败</h3>
-            <p id="errorMessage"></p>
-            <button class="restart-btn" id="errorRestartBtn">重新尝试</button>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>我的文件安全吗？</h3>
+                    <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="faq-answer">
+                    <p>非常安全。所有文件处理均在您的本地完成，不会上传到任何服务器。我们非常重视用户隐私，确保您的文档信息安全。</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>可以批量处理多个文件吗？</h3>
+                    <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="faq-answer">
+                    <p>目前版本支持单个文件处理。批量处理功能正在开发中，敬请期待。如果您有批量处理需求，可以联系我们获取定制服务。</p>
+                </div>
+            </div>
         </div>
-    </div>
+    </section>
 
     <script src="app.js"></script>
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        const mainTimeline = gsap.timeline();
+
+        mainTimeline
+            .from('.hero-title', {
+                y: 100,
+                opacity: 0,
+                duration: 1,
+                ease: 'power3.out'
+            })
+            .from('.hero-subtitle', {
+                y: 50,
+                opacity: 0,
+                duration: 0.8,
+                ease: 'power3.out'
+            }, '-=0.5')
+            .from('.upload-container', {
+                y: 50,
+                opacity: 0,
+                duration: 0.8,
+                ease: 'power3.out'
+            }, '-=0.5')
+            .to('.upload-container', {
+                opacity: 1,
+                duration: 0.1
+            })
+            .from('.scroll-indicator', {
+                y: -20,
+                opacity: 0,
+                duration: 0.6,
+                ease: 'power3.out'
+            }, '-=0.3');
+
+        gsap.from('.about-text h2', {
+            scrollTrigger: {
+                trigger: '.about-section',
+                start: 'top 80%',
+                end: 'top 20%',
+                toggleActions: 'play none none none'
+            },
+            y: 50,
+            opacity: 0,
+            duration: 1,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.about-text p', {
+            scrollTrigger: {
+                trigger: '.about-section',
+                start: 'top 80%',
+                end: 'top 20%',
+                toggleActions: 'play none none none'
+            },
+            y: 30,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: 'power3.out'
+        });
+
+        const svgTimeline = gsap.timeline({
+            scrollTrigger: {
+                trigger: '.about-svg',
+                start: 'top 80%',
+                end: 'top 20%',
+                scrub: 1
+            }
+        });
+
+        svgTimeline
+            .from('.pdf-outline', {
+                strokeDashoffset: 500,
+                duration: 1
+            })
+            .from('.pdf-lines', {
+                strokeDashoffset: 200,
+                duration: 0.8
+            }, '-=0.5')
+            .from('.pdf-text', {
+                opacity: 0,
+                scale: 0.5,
+                duration: 0.5
+            }, '-=0.3')
+            .from('.arrow-shape', {
+                x: -50,
+                opacity: 0,
+                duration: 0.8
+            }, '-=0.5')
+            .from('.center-circle', {
+                scale: 0,
+                duration: 0.8
+            }, '-=0.3')
+            .from('.node-1, .node-2, .node-3, .node-4', {
+                scale: 0,
+                duration: 0.6,
+                stagger: 0.1
+            }, '-=0.4')
+            .from('.line-1, .line-2, .line-3, .line-4', {
+                strokeDashoffset: 100,
+                duration: 0.8,
+                stagger: 0.1
+            }, '-=0.6');
+
+        gsap.from('.features-section h2', {
+            scrollTrigger: {
+                trigger: '.features-section',
+                start: 'top 80%',
+                end: 'top 20%',
+                toggleActions: 'play none none reverse'
+            },
+            y: 50,
+            opacity: 0,
+            duration: 1,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.feature-card', {
+            scrollTrigger: {
+                trigger: '.features-grid',
+                start: 'top 80%',
+                end: 'top 20%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            duration: 0.8,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.faq-section h2', {
+            scrollTrigger: {
+                trigger: '.faq-section',
+                start: 'top 80%',
+                end: 'top 20%',
+                toggleActions: 'play none none none'
+            },
+            y: 50,
+            opacity: 0,
+            duration: 1,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.faq-item', {
+            scrollTrigger: {
+                trigger: '.faq-container',
+                start: 'top 80%',
+                end: 'top 20%',
+                toggleActions: 'play none none none'
+            },
+            y: 30,
+            opacity: 0,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: 'power3.out'
+        });
+
+        gsap.to('#progressBar', {
+            scrollTrigger: {
+                trigger: 'body',
+                start: 'top top',
+                end: 'bottom bottom',
+                scrub: 0.3
+            },
+            width: '100%',
+            ease: 'none'
+        });
+
+        document.querySelectorAll('.faq-question').forEach(item => {
+            item.addEventListener('click', () => {
+                const faqItem = item.parentElement;
+                const answer = faqItem.querySelector('.faq-answer');
+                
+                faqItem.classList.toggle('active');
+                answer.classList.toggle('active');
+            });
+        });
+
+        ScrollTrigger.matchMedia({
+            '(max-width: 768px)': function() {
+                gsap.set('.about-svg', {
+                    scale: 0.7
+                });
+                
+                gsap.from('.feature-card', {
+                    scrollTrigger: {
+                        trigger: '.features-grid',
+                        start: 'top 85%',
+                        end: 'top 15%',
+                        toggleActions: 'play none none reverse'
+                    },
+                    y: 30,
+                    opacity: 0,
+                    duration: 0.6,
+                    stagger: 0.15,
+                    ease: 'power3.out'
+                });
+            }
+        });
+    </script>
 </body>
 </html>
