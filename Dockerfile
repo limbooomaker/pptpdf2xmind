@@ -1,9 +1,13 @@
 FROM python:3.9-slim
 
-# 安装系统依赖（pdf2image需要的poppler-utils）
+# 安装系统依赖（pdf2image需要的poppler-utils和其他必要工具）
 RUN apt-get update && apt-get install -y \
     poppler-utils \
     curl \
+    wget \
+    gnupg \
+    ca-certificates \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # 安装Node.js（使用官方方法）
@@ -29,7 +33,7 @@ RUN pip install -r requirements.txt
 RUN npm install
 
 # 创建必要的目录
-RUN mkdir -p /tmp/uploads /tmp/outputs /tmp/temp
+RUN mkdir -p /app/uploads /app/outputs /app/temp
 
 # 设置环境变量
 ENV PORT=3000
