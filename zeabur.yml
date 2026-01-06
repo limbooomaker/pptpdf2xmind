@@ -13,5 +13,5 @@ services:
       - NODE_ENV=production
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     resources:
-      memory: 512M
+      memory: 1G
       cpu: 0.5
