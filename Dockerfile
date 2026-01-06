@@ -33,9 +33,10 @@ RUN mkdir -p /tmp/uploads /tmp/outputs /tmp/temp
 
 # 设置环境变量
 ENV PORT=3000
-ENV UPLOAD_DIR=/tmp/uploads
-ENV OUTPUT_DIR=/tmp/outputs
-ENV TEMP_DIR=/tmp/temp
+ENV UPLOAD_DIR=/app/uploads
+ENV OUTPUT_DIR=/app/outputs
+ENV TEMP_DIR=/app/temp
+ENV NODE_ENV=production
 
 # 暴露端口
 EXPOSE 3000
@@ -44,5 +45,8 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
+# 设置启动脚本权限
+RUN chmod +x start.sh
+
 # 启动应用
-CMD ["node", "server.js"]
+CMD ["./start.sh"]

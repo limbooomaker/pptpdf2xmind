@@ -367,7 +367,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`SlideMind server running on port ${PORT}`);
     console.log(`Python script path: ${path.join(__dirname, 'pdf_processor.py')}`);
     
