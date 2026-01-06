@@ -2,14 +2,14 @@ services:
   slidemind:
     build:
       context: .
-      dockerfile: Dockerfile.simple
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
       - PORT=3000
-      - UPLOAD_DIR=/app/uploads
-      - OUTPUT_DIR=/app/outputs
-      - TEMP_DIR=/app/temp
+      - UPLOAD_DIR=/tmp/uploads
+      - OUTPUT_DIR=/tmp/outputs
+      - TEMP_DIR=/tmp/temp
       - NODE_ENV=production
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     resources:

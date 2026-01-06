@@ -365,6 +365,8 @@ app.get('/health', (req, res) => {
         version: '1.0.0',
         timestamp: new Date().toISOString()
     });
+});
+
 app.listen(PORT, () => {
     console.log(`SlideMind server running on port ${PORT}`);
     console.log(`Python script path: ${path.join(__dirname, 'pdf_processor.py')}`);
@@ -382,7 +384,8 @@ app.listen(PORT, () => {
     } else {
         console.error('Python script not found at:', pythonScriptPath);
     }
-});   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`Upload directory: ${process.env.UPLOAD_DIR}`);
     console.log(`Output directory: ${process.env.OUTPUT_DIR}`);
 });

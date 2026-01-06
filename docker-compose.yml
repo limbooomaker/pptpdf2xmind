@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-test_key}
+      - PORT=3000
+      - UPLOAD_DIR=/tmp/uploads
+      - OUTPUT_DIR=/tmp/outputs
+      - TEMP_DIR=/tmp/temp
+    volumes:
+      - ./uploads:/tmp/uploads
+      - ./outputs:/tmp/outputs
+      - ./temp:/tmp/temp
+      - ./logs:/var/log/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
