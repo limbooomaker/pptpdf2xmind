@@ -69,13 +69,21 @@ const executePython = async (script, args) => {
                 return;
             }
             
+            // 检查输出是否包含错误信息（如Bad Gateway）
+            const output = stdout.trim();
+            if (output.includes('Bad Gateway') || output.includes('error') || output.includes('Error')) {
+                console.error('Python script returned error output:', output);
+                reject(new Error(`Python script error: ${output}`));
+                return;
+            }
+            
             try {
-                const result = JSON.parse(stdout.trim());
+                const result = JSON.parse(output);
                 resolve(result);
             } catch (e) {
                 console.error('JSON parse error:', e.message);
-                console.error('Raw output:', stdout);
-                reject(new Error(`Failed to parse Python output as JSON: ${stdout}`));
+                console.error('Raw output:', output);
+                reject(new Error(`Failed to parse Python output as JSON: ${output}`));
             }
         });
     });
