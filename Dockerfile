@@ -29,13 +29,12 @@ RUN mkdir -p /tmp/uploads /tmp/outputs /tmp/temp
 RUN chmod +x /app/pdf_processor.py
 
 # 设置环境变量
-ENV PORT=3000
 ENV UPLOAD_DIR=/tmp/uploads
 ENV OUTPUT_DIR=/tmp/outputs
 ENV TEMP_DIR=/tmp/temp
 ENV NODE_ENV=production
 
-# 暴露端口
+# 暴露端口（让Zeabur自动管理）
 EXPOSE 3000
 
 # 健康检查

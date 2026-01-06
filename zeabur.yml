@@ -3,10 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
     environment:
-      - PORT=3000
       - UPLOAD_DIR=/tmp/uploads
       - OUTPUT_DIR=/tmp/outputs
       - TEMP_DIR=/tmp/temp
