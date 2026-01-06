@@ -16,6 +16,15 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static('public'));
 
+// 健康检查端点
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        service: 'SlideMind PDF to XMind Converter'
+    });
+});
+
 // 设置服务器超时时间（30分钟）
 app.use((req, res, next) => {
     req.setTimeout(30 * 60 * 1000); // 30分钟
@@ -52,9 +61,29 @@ const executePython = async (script, args) => {
         const command = `python3 ${script} ${args.join(' ')}`;
         console.log('Executing Python command:', command);
         
+        // 检查脚本文件是否存在
+        if (!fs.existsSync(script)) {
+            const errorMsg = `Python script not found: ${script}`;
+            console.error(errorMsg);
+            reject(new Error(errorMsg));
+            return;
+        }
+        
+        // 检查脚本文件是否有执行权限
+        try {
+            fs.accessSync(script, fs.constants.X_OK);
+        } catch (e) {
+            const errorMsg = `Python script not executable: ${script}. Please run 'chmod +x ${script}'`;
+            console.error(errorMsg);
+            reject(new Error(errorMsg));
+            return;
+        }
+        
         exec(command, (error, stdout, stderr) => {
-            console.log('Python stdout:', stdout);
-            if (stderr) {
+            console.log('Python stdout length:', stdout?.length || 0);
+            console.log('Python stderr length:', stderr?.length || 0);
+            
+            if (stderr && stderr.trim()) {
                 console.log('Python stderr:', stderr);
             }
             
@@ -72,11 +101,18 @@ const executePython = async (script, args) => {
             // 检查输出是否包含错误信息（如Bad Gateway）
             const output = stdout.trim();
             
-            // 更严格的错误检测
+            // 更严格的错误检测 - 优先检查网关错误
+            if (output.includes('Bad Gateway') || output.includes('502 Bad Gateway')) {
+                console.error('Python script returned Bad Gateway error:', output);
+                reject(new Error('Python script execution failed: Bad Gateway error (likely file permission or path issue)'));
+                return;
+            }
+            
             const errorKeywords = [
-                'Bad Gateway', 'error', 'Error', 'failed', 'Failed', 
+                'error', 'Error', 'failed', 'Failed', 
                 'exception', 'Exception', 'traceback', 'Traceback',
-                'not found', 'not exist', 'permission denied', 'timeout'
+                'not found', 'not exist', 'permission denied', 'timeout',
+                'ModuleNotFoundError', 'ImportError', 'FileNotFoundError'
             ];
             
             const hasError = errorKeywords.some(keyword => output.includes(keyword));
@@ -156,7 +192,7 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
 
             // 处理PDF页面
             const pagesData = await Promise.race([
-                executePython('./pdf_processor.py', [pdfPath, outputDir]),
+                executePython(path.join(__dirname, 'pdf_processor.py'), [pdfPath, outputDir]),
                 timeoutPromise
             ]);
             
@@ -329,11 +365,24 @@ app.get('/health', (req, res) => {
         version: '1.0.0',
         timestamp: new Date().toISOString()
     });
-});
-
 app.listen(PORT, () => {
     console.log(`SlideMind server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Python script path: ${path.join(__dirname, 'pdf_processor.py')}`);
+    
+    // 检查Python脚本是否存在且可执行
+    const pythonScriptPath = path.join(__dirname, 'pdf_processor.py');
+    if (fs.existsSync(pythonScriptPath)) {
+        console.log('Python script exists and is accessible');
+        try {
+            fs.accessSync(pythonScriptPath, fs.constants.X_OK);
+            console.log('Python script has execution permissions');
+        } catch (e) {
+            console.error('Python script is not executable:', e.message);
+        }
+    } else {
+        console.error('Python script not found at:', pythonScriptPath);
+    }
+});   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`Upload directory: ${process.env.UPLOAD_DIR}`);
     console.log(`Output directory: ${process.env.OUTPUT_DIR}`);
 });
