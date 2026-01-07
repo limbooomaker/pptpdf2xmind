@@ -195,12 +195,6 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
         console.log('处理后的原始文件名:', originalFilename);
         const outputDir = path.join(sessionDir, 'pages');
         
-        // 初始化会话状态
-        sessionStatus.set(sessionId, {
-            status: 'parsing',
-            progress: 0
-        });
-        
         try {
             // 设置超时保护
             const timeoutPromise = new Promise((_, reject) => {
@@ -212,12 +206,6 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
                 executePython(path.join(__dirname, 'pdf_processor.py'), [pdfPath, outputDir]),
                 timeoutPromise
             ]);
-            
-            // 更新状态为AI分析中
-            sessionStatus.set(sessionId, {
-                status: 'analyzing',
-                progress: 33
-            });
             
             // 生成知识树（最多重试2次，失败时使用备用方案）
             const { generateKnowledgeTree, generateFallbackKnowledgeTree } = require('./aiService');
@@ -247,12 +235,6 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
                     await new Promise(resolve => setTimeout(resolve, 2000)); // 2秒后重试
                 }
             }
-            
-            // 更新状态为生成中
-            sessionStatus.set(sessionId, {
-                status: 'generating',
-                progress: 66
-            });
             
             // 生成XMind文件
             const { generateXMind } = require('./xmindGenerator');
@@ -309,16 +291,40 @@ const sessionStatus = new Map();
 
 app.get('/api/status/:sessionId', (req, res) => {
     const sessionId = req.params.sessionId;
+    const outputDir = process.env.OUTPUT_DIR || './outputs';
     
     // 检查内存缓存中的状态
     if (sessionStatus.has(sessionId)) {
         const status = sessionStatus.get(sessionId);
-        res.json(status);
-        return;
+        if (status.status === 'completed') {
+            res.json(status);
+            return;
+        }
     }
     
-    // 如果没有找到状态，返回默认的处理状态
-    res.json({ status: 'processing', progress: 0 });
+    // 检查所有XMind文件，查找包含sessionId的文件
+    const files = fs.readdirSync(outputDir).filter(f => f.endsWith('.xmind'));
+    
+    // 查找与当前sessionId相关的文件
+    const matchingFiles = files.filter(f => {
+        // 检查文件名是否包含sessionId（作为标识符）
+        const fileNameWithoutExt = f.replace('.xmind', '');
+        return fileNameWithoutExt.includes(sessionId) || 
+               sessionStatus.has(sessionId);
+    });
+    
+    if (matchingFiles.length > 0) {
+        const status = {
+            status: 'completed', 
+            filename: matchingFiles[0],
+            downloadUrl: `/api/download/${matchingFiles[0]}`
+        };
+        // 更新缓存
+        sessionStatus.set(sessionId, status);
+        res.json(status);
+    } else {
+        res.json({ status: 'processing' });
+    }
 });
 
 app.get('/api/download/:filename', (req, res) => {
