@@ -119,28 +119,15 @@ const executePython = async (script, args) => {
                 return;
             }
             
-            // 检查输出是否包含错误信息（如Bad Gateway）
             const output = stdout.trim();
+            
+            console.log('Python output length:', output.length);
+            console.log('Python output preview (first 500 chars):', output.substring(0, 500));
             
             // 更严格的错误检测 - 优先检查网关错误
             if (output.includes('Bad Gateway') || output.includes('502 Bad Gateway')) {
                 console.error('Python script returned Bad Gateway error:', output);
                 reject(new Error('Python script execution failed: Bad Gateway error (likely file permission or path issue)'));
-                return;
-            }
-            
-            const errorKeywords = [
-                'error', 'Error', 'failed', 'Failed', 
-                'exception', 'Exception', 'traceback', 'Traceback',
-                'not found', 'not exist', 'permission denied', 'timeout',
-                'ModuleNotFoundError', 'ImportError', 'FileNotFoundError'
-            ];
-            
-            const hasError = errorKeywords.some(keyword => output.includes(keyword));
-            
-            if (hasError) {
-                console.error('Python script returned error output:', output);
-                reject(new Error(`Python script error: ${output.substring(0, 200)}`));
                 return;
             }
             
@@ -151,27 +138,76 @@ const executePython = async (script, args) => {
                 return;
             }
             
+            // 尝试解析JSON
+            let result;
             try {
-                const result = JSON.parse(output);
-                resolve(result);
+                result = JSON.parse(output);
             } catch (e) {
                 console.error('JSON parse error:', e.message);
-                console.error('Raw output:', output);
-                reject(new Error(`Failed to parse Python output as JSON: ${output.substring(0, 200)}`));
+                console.error('Raw output:', output.substring(0, 500));
+                reject(new Error(`Failed to parse Python output as JSON: ${e.message}`));
+                return;
             }
+            
+            // 检查JSON的status字段
+            if (result.status === 'error') {
+                console.error('Python script returned error status:', result);
+                const errorMsg = result.message || 'Unknown error';
+                const errorTraceback = result.traceback || '';
+                reject(new Error(`Python script error: ${errorMsg}${errorTraceback ? '\n' + errorTraceback : ''}`));
+                return;
+            }
+            
+            // 检查是否包含预期的data字段
+            if (!result.data) {
+                console.error('Python output missing data field:', result);
+                reject(new Error('Python script output missing data field'));
+                return;
+            }
+            
+            console.log('Python script executed successfully, data length:', result.data.length);
+            resolve(result);
         });
     });
 };
 
-const cleanup = async (sessionId) => {
+const cleanup = async (sessionId, pdfPath, safeFilename) => {
     const dirs = [
-        path.join(process.env.UPLOAD_DIR || './uploads', sessionId),
         path.join(process.env.TEMP_DIR || './temp', sessionId)
     ];
     
+    // 清理上传的PDF文件
+    if (pdfPath && fs.existsSync(pdfPath)) {
+        try {
+            fs.unlinkSync(pdfPath);
+            console.log(`清理上传文件: ${pdfPath}`);
+        } catch (e) {
+            console.error(`清理上传文件失败: ${pdfPath}`, e.message);
+        }
+    }
+    
+    // 清理临时目录
     for (const dir of dirs) {
         if (fs.existsSync(dir)) {
-            fs.rmSync(dir, { recursive: true, force: true });
+            try {
+                fs.rmSync(dir, { recursive: true, force: true });
+                console.log(`清理临时目录: ${dir}`);
+            } catch (e) {
+                console.error(`清理临时目录失败: ${dir}`, e.message);
+            }
+        }
+    }
+    
+    // 清理生成的XMind文件（可选，根据需求决定是否保留）
+    if (safeFilename) {
+        const outputPath = path.join(process.env.OUTPUT_DIR || './outputs', safeFilename);
+        if (fs.existsSync(outputPath)) {
+            try {
+                fs.unlinkSync(outputPath);
+                console.log(`清理输出文件: ${outputPath}`);
+            } catch (e) {
+                console.error(`清理输出文件失败: ${outputPath}`, e.message);
+            }
         }
     }
 };
@@ -254,7 +290,7 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
             ]);
             
             // 清理临时文件
-            await cleanup(sessionId);
+            await cleanup(sessionId, pdfPath, xmindResult.safeFilename);
             
             // 更新状态缓存 - 使用显示文件名和安全的文件系统文件名
             const displayFilename = xmindResult.displayFilename;
@@ -278,7 +314,7 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
             console.log(`Session ${sessionId} completed successfully`);
         } catch (error) {
             console.error(`Session ${sessionId} failed:`, error);
-            await cleanup(sessionId);
+            await cleanup(sessionId, pdfPath, null);
             
             // 发送错误响应
             res.status(500).json({ 
