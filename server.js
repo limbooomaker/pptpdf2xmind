@@ -198,18 +198,8 @@ const cleanup = async (sessionId, pdfPath, safeFilename) => {
         }
     }
     
-    // 清理生成的XMind文件（可选，根据需求决定是否保留）
-    if (safeFilename) {
-        const outputPath = path.join(process.env.OUTPUT_DIR || './outputs', safeFilename);
-        if (fs.existsSync(outputPath)) {
-            try {
-                fs.unlinkSync(outputPath);
-                console.log(`清理输出文件: ${outputPath}`);
-            } catch (e) {
-                console.error(`清理输出文件失败: ${outputPath}`, e.message);
-            }
-        }
-    }
+    // 注意：生成的XMind文件不在这里清理，由专门的清理任务处理
+    // XMind文件会在用户下载后或过期后由定时任务清理
 };
 
 app.post('/api/upload', upload.single('pdf'), async (req, res) => {
@@ -373,11 +363,17 @@ app.get('/api/status/:sessionId', (req, res) => {
     }
 });
 
+// 存储已下载文件的记录
+const downloadedFiles = new Set();
+
 app.get('/api/download/:filename', (req, res) => {
     const safeFilename = req.params.filename;
     const filepath = path.join(process.env.OUTPUT_DIR || './outputs', safeFilename);
     
     if (fs.existsSync(filepath)) {
+        // 标记文件为已下载
+        downloadedFiles.add(safeFilename);
+        
         // 从sessionStatus中查找对应的显示文件名
         let displayFilename = safeFilename; // 默认使用安全文件名
         
@@ -423,6 +419,31 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+
+// 定时清理任务 - 每小时清理一次已下载的文件
+setInterval(() => {
+    const outputDir = process.env.OUTPUT_DIR || './outputs';
+    const files = fs.readdirSync(outputDir).filter(f => f.endsWith('.xmind'));
+    
+    let cleanedCount = 0;
+    files.forEach(filename => {
+        if (downloadedFiles.has(filename)) {
+            const filePath = path.join(outputDir, filename);
+            try {
+                fs.unlinkSync(filePath);
+                downloadedFiles.delete(filename);
+                cleanedCount++;
+                console.log(`清理已下载文件: ${filename}`);
+            } catch (e) {
+                console.error(`清理文件失败: ${filename}`, e.message);
+            }
+        }
+    });
+    
+    if (cleanedCount > 0) {
+        console.log(`本次清理了 ${cleanedCount} 个已下载文件`);
+    }
+}, 60 * 60 * 1000); // 每小时执行一次
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`SlideMind server running on port ${PORT}`);

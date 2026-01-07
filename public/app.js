@@ -51,6 +51,7 @@ fileInput.addEventListener('change', (e) => {
 });
 
 changeFileBtn.addEventListener('click', () => {
+    resetUploadState();
     fileInput.click();
 });
 
@@ -269,6 +270,25 @@ downloadBtn.addEventListener('click', () => {
 
 restartBtn.addEventListener('click', resetForm);
 errorRestartBtn.addEventListener('click', resetForm);
+
+function resetUploadState() {
+    selectedFile = null;
+    fileInput.value = '';
+    
+    // 重置所有界面状态
+    uploadSection.classList.remove('hidden');
+    filePreviewSection.classList.add('hidden');
+    processingSection.classList.add('hidden');
+    resultSection.classList.add('hidden');
+    errorSection.classList.add('hidden');
+    
+    // 重置进度
+    setProgress(0);
+    updateProgress(1);
+    
+    // 重置按钮状态
+    generateBtn.disabled = false;
+}
 
 function resetForm() {
     fileInput.value = '';
