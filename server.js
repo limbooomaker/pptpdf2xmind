@@ -99,8 +99,18 @@ const executePython = async (script, args) => {
             }
             
             if (error) {
-                console.error('Python execution error:', error);
-                reject(new Error(`Python execution failed: ${error.message}`));
+                console.error('=== Python execution error ===');
+                console.error('Error code:', error.code);
+                console.error('Error signal:', error.signal);
+                console.error('Error message:', error.message);
+                console.error('=== Full stdout ===');
+                console.error(stdout || '(empty)');
+                console.error('=== Full stderr ===');
+                console.error(stderr || '(empty)');
+                console.error('=== End of error details ===');
+                
+                const fullError = `Python execution failed (code: ${error.code}): ${error.message}. Stderr: ${stderr || 'none'}`;
+                reject(new Error(fullError));
                 return;
             }
             

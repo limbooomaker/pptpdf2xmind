@@ -77,6 +77,11 @@ def process_pdf(pdf_path, output_dir):
         raise
 
 if __name__ == "__main__":
+    print("=== Python PDF Processor Started ===", file=sys.stderr)
+    print(f"Python version: {sys.version}", file=sys.stderr)
+    print(f"Working directory: {os.getcwd()}", file=sys.stderr)
+    print(f"Arguments: {sys.argv}", file=sys.stderr)
+    
     if len(sys.argv) < 3:
         error_msg = json.dumps({"error": "Usage: python pdf_processor.py <pdf_path> <output_dir>"})
         print(error_msg)
@@ -85,19 +90,48 @@ if __name__ == "__main__":
     pdf_path = sys.argv[1]
     output_dir = sys.argv[2]
     
+    print(f"PDF path: {pdf_path}", file=sys.stderr)
+    print(f"Output directory: {output_dir}", file=sys.stderr)
+    
     # 验证文件存在性
     if not os.path.exists(pdf_path):
         error_msg = json.dumps({"status": "error", "message": f"PDF file not found: {pdf_path}"})
         print(error_msg)
+        print(f"ERROR: PDF file not found at {pdf_path}", file=sys.stderr)
+        sys.exit(1)
+    
+    # 检查文件权限
+    if not os.access(pdf_path, os.R_OK):
+        error_msg = json.dumps({"status": "error", "message": f"No read permission for PDF file: {pdf_path}"})
+        print(error_msg)
+        print(f"ERROR: No read permission for {pdf_path}", file=sys.stderr)
+        sys.exit(1)
+    
+    # 检查输出目录权限
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+        if not os.access(output_dir, os.W_OK):
+            error_msg = json.dumps({"status": "error", "message": f"No write permission for output directory: {output_dir}"})
+            print(error_msg)
+            print(f"ERROR: No write permission for {output_dir}", file=sys.stderr)
+            sys.exit(1)
+    except Exception as e:
+        error_msg = json.dumps({"status": "error", "message": f"Failed to create output directory: {str(e)}"})
+        print(error_msg)
+        print(f"ERROR: Failed to create output directory: {str(e)}", file=sys.stderr)
         sys.exit(1)
     
     try:
+        print("Starting PDF processing...", file=sys.stderr)
         result = process_pdf(pdf_path, output_dir)
         output = json.dumps({"status": "success", "data": result})
         print(output)
+        print("PDF processing completed successfully", file=sys.stderr)
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
+        print(f"ERROR during PDF processing: {str(e)}", file=sys.stderr)
+        print(f"Traceback:\n{error_details}", file=sys.stderr)
         error_msg = json.dumps({
             "status": "error", 
             "message": str(e),

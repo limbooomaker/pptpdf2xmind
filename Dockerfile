@@ -16,6 +16,12 @@ WORKDIR /app
 # 复制项目文件
 COPY . .
 
+# 调试信息：显示Python和Node.js版本
+RUN python3 --version && node --version && npm --version
+
+# 调试信息：验证Python脚本权限
+RUN ls -la /app/pdf_processor.py && python3 -c "import sys; print(f'Python executable: {sys.executable}')"
+
 # 安装Python依赖
 RUN pip install -r requirements.txt
 
